@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel File Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #drop-area {
+            border: 2px dashed #ccc;
+            border-radius: 20px;
+            width: 480px;
+            padding: 20px;
+            text-align: center;
+            background-color: white;
+        }
+        #drop-area.highlight {
+            border-color: #000;
+        }
+        #file-input {
+            display: none;
+        }
+        #upload-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #upload-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div id="drop-area">
+        <form class="my-form">
+            <p>Upload your Excel file using the button below or by dragging and dropping it onto the dashed region</p>
+            <input type="file" id="file-input" accept=".xlsx,.xls">
+            <label for="file-input" id="file-label">Choose a file</label>
+            <div id="file-name"></div>
+            <button type="button" id="upload-button" disabled>Upload to API</button>
+        </form>
+    </div>
+
+    <script>
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const fileLabel = document.getElementById('file-label');
+        const fileName = document.getElementById('file-name');
+        const uploadButton = document.getElementById('upload-button');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropArea.classList.add('highlight');
+        }
+
+        function unhighlight() {
+            dropArea.classList.remove('highlight');
+        }
+
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        fileInput.addEventListener('change', function(e) {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.name.match(/\.(xlsx|xls)$/)) {
+                    fileName.textContent = file.name;
+                    uploadButton.disabled = false;
+                } else {
+                    alert('Please upload an Excel file (.xlsx or .xls)');
+                    resetFileInput();
+                }
+            }
+        }
+
+        function resetFileInput() {
+            fileInput.value = '';
+            fileName.textContent = '';
+            uploadButton.disabled = true;
+        }
+
+        uploadButton.addEventListener('click', uploadFile);
+
+        function uploadFile() {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select a file first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Replace 'YOUR_API_ENDPOINT' with your actual API endpoint
+            fetch('YOUR_API_ENDPOINT', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('File uploaded successfully!');
+                resetFileInput();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error uploading the file.');
+            });
+        }
+    </script>
+</body>
+</html>
